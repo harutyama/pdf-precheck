@@ -35,7 +35,7 @@
 - プライバシーページ `/privacy`
 - 存在しないURLは 404 相当（`/admin` も含む）
 - 自動テスト、lint、production build
-- Analytics送信の土台（測定IDが無いときは何も送らない）
+- Analytics送信の土台（測定ID `G-0VFESK32C6` を GitHub Secrets 経由で注入。ファイル名やPDF内容は送らない）
 - Cloudflare Pages 公開: https://pdf-precheck.pages.dev/
 - GitHub: https://github.com/harutyama/pdf-precheck
 - GitHub Actions による自動デプロイワークフロー（Secrets 設定後に有効）
@@ -167,15 +167,11 @@ HANDOFF.md                  このファイル
 
 数字の確認場所: https://analytics.google.com/
 
-未設定時に必要なもの:
+設定済み:
 
-1. Google アカウント
-2. GA4 プロパティ作成
-3. 測定ID `G-XXXXXXXXXX`
-4. GitHub Secrets の `VITE_GA_MEASUREMENT_ID` と、必要なら Cloudflare Pages 側の同名変数
-5. 再デプロイ（GitHub Actions または wrangler）
-
-開発段階では測定IDを入れておらず、実データは送らない・表示しない。
+- 測定ID: `G-0VFESK32C6`（公開前提のID。GitHub Secrets の `VITE_GA_MEASUREMENT_ID` に保存）
+- 確認方法: オーナーの Google アカウントで analytics.google.com を開く
+- 反映: サイトを開いたあとしばらくすると「リアルタイム」に表示されることがある。日別レポートは半日〜1日かかることがある
 
 ## 管理者画面 / アクセス制限
 
@@ -198,11 +194,11 @@ HANDOFF.md                  このファイル
 - 一般ユーザーが `/admin` にアクセスすると: 他の不明URLと同じ「ページが見つかりません」。Analyticsデータは出ない。ログインフォームも出ない
 - Analytics実データの取得元: このアプリのAPIからは取得していない。GA4公式画面のみ
 - 秘密情報の管理場所: 現時点で秘密鍵は存在しない。測定IDは公開前提。将来サーバーを足す場合は Cloudflare の暗号化環境変数に置く
-- 公開時に手動設定するもの: GA4プロパティ、測定ID、Cloudflareの環境変数、自分以外にGA4権限を渡さないこと
+- 公開時に手動設定するもの: 済（GA4プロパティ、測定ID、GitHub Secrets）。自分以外にGA4権限を渡さないこと
 - 今、アクセス制限は有効か:
   - このWebアプリ内の独自管理画面: 存在しない。実データも出さない
-  - GA4公式画面: オーナーがGA4を作り、自分のGoogleアカウントだけに権限を付けた時点で有効
-  - 開発段階: 測定ID未設定。実データ送信なし、実データ表示なし
+  - GA4公式画面: オーナーの Google アカウントだけで閲覧できる。測定IDは設定済み
+  - 独自 `/admin`: 存在しない。実データも出さない
 
 将来、どうしても独自 `/admin` が必要なら:
 
@@ -257,14 +253,11 @@ npm run build  … 成功。PDF.jsは別チャンク（parsePdf + worker）
 - GitHub: https://github.com/harutyama/pdf-precheck
 - Cloudflare アカウント: neymar05253453@gmail.com（Pages プロジェクト名 `pdf-precheck`）
 - 残作業:
-  1. GA4 測定IDを GitHub Secrets `VITE_GA_MEASUREMENT_ID` に入れる（未設定）
-  2. GitHub Secrets `CLOUDFLARE_API_TOKEN` を入れて自動デプロイを有効化する（ワークフローは追加済み）
-  3. 必要ならカスタムドメインを付ける
+  1. analytics.google.com で数字が見えるか確認する（反映まで時間がかかることがある）
+  2. 必要ならカスタムドメインを付ける
 
 ## 未実装
 
-- GA4測定IDの設定（コードとワークフローは用意済み）
-- Cloudflare APIトークンの GitHub Secrets 登録（自動デプロイ有効化）
 - 独自 `/admin`（意図的）
 - 課金、アカウント、DB、回数制限
 - ユーザー独自チェック条件
@@ -280,7 +273,7 @@ npm run build  … 成功。PDF.jsは別チャンク（parsePdf + worker）
 - 一部の特殊なPDFは PDF.js が読めず `corrupt` / `unknown` になる
 - 暗号化PDFの自動テストは、例外分類まで。実ファイルは未投入
 - GA4はGoogleへ最低限の利用データを送る。PDF内容は送らないが、完全なゼロ通信ではない
-- 測定ID未設定の間、利用状況は確認できない
+- 測定ID未設定の間、利用状況は確認できない → 解消済み。確認先は analytics.google.com
 - 一度にチェックできるのは最大10ファイル。上限は `src/config/site.ts` の `maxPdfFiles`
 
 ## 将来のPRO版
@@ -304,16 +297,15 @@ npm run build  … 成功。PDF.jsは別チャンク（parsePdf + worker）
 
 優先順位順:
 
-1. GitHub Secrets に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を入れて自動デプロイを有効化する
-2. GA4 測定IDを作り、Secret `VITE_GA_MEASUREMENT_ID` に入れる
-3. 必要ならカスタムドメインを付ける
-4. 公開後、数日使ってから PRO の要否を判断する
+1. analytics.google.com でアクセスが見えるか確認する
+2. 必要ならカスタムドメインを付ける
+3. 公開後、数日使ってから PRO の要否を判断する
 
 ## ChatGPTへの引き継ぎ
 
 今の状態を一文で言うと:
 
-「ブラウザ内だけで動くPDF提出前チェッカーは https://pdf-precheck.pages.dev/ で公開済み。最大10ファイルまで同時チェックできる。GitHub は https://github.com/harutyama/pdf-precheck 。自動デプロイ用 GitHub Actions はあるが、Cloudflare APIトークンの Secret が未設定。Analytics（GA4）も測定ID未設定。管理者画面は独自 `/admin` ではなく GA4 公式ダッシュボード。」
+「ブラウザ内だけで動くPDF提出前チェッカーは https://pdf-precheck.pages.dev/ で公開済み。最大10ファイルまで同時チェックできる。GitHub は https://github.com/harutyama/pdf-precheck 。GitHub Actions で Cloudflare Pages へ自動デプロイする。Analytics は GA4 測定ID `G-0VFESK32C6` を GitHub Secrets 経由で注入。管理者画面は独自 `/admin` ではなく analytics.google.com。」
 
 次の指示の出し方の例:
 
