@@ -7,6 +7,7 @@ export const AnalyticsEvent = {
   checkStarted: "check_started",
   checkSucceeded: "check_succeeded",
   checkFailed: "check_failed",
+  batchCompleted: "batch_completed",
 } as const;
 
 export type AnalyticsEventName =

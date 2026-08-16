@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { site } from "../config/site.ts";
+import { privacyNotice, site } from "../config/site.ts";
 import { BrandMark } from "./BrandMark.tsx";
 import { navigate } from "./usePath.ts";
 
@@ -18,11 +18,11 @@ export function AppShell({ children }: AppShellProps) {
             <em>提出前の最終確認</em>
           </span>
         </button>
-        <p className="header-privacy">{site.privacyLine}</p>
+        <p className="header-privacy">{privacyNotice()}</p>
       </header>
       <main className="site-main">{children}</main>
       <footer className="site-footer">
-        <p>{site.privacyLine}</p>
+        <p>{privacyNotice()}</p>
         <nav>
           <button type="button" onClick={() => navigate("/")}>
             トップ

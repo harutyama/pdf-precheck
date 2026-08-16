@@ -9,7 +9,7 @@
 
 「PDF提出前チェッカー」という、一般公開向けWebサービス。
 
-ユーザーがPDFをドラッグ＆ドロップすると、提出・納品前に問題のありそうな体裁をブラウザ内でチェックする。
+ユーザーがPDFを最大10ファイルまでまとめてドラッグ＆ドロップすると、提出・納品前に問題のありそうな体裁をブラウザ内でチェックする。
 
 必須条件:
 
@@ -20,7 +20,7 @@
 - スマートフォンでも最低限使える
 - 将来の FREE / PRO 追加を妨げない
 
-サービス名は `src/config/site.ts` の `site.name` を変えれば、画面上の名称をまとめやすい。
+サービス名は `src/config/site.ts` の `site.name`、同時チェック上限は `site.maxPdfFiles` を変えればまとめやすい。
 
 ## 現在の完成状況
 
@@ -28,16 +28,17 @@
 
 動作しているもの:
 
-- トップページでのPDF選択 / ドロップ
+- トップページでのPDF選択 / ドロップ（最大10ファイル）
 - ブラウザ内PDF解析
-- OK / 注意 / エラーの結果表示
+- OK / 注意 / エラーの結果表示（複数ファイルは一覧）
 - 進捗表示
 - プライバシーページ `/privacy`
 - 存在しないURLは 404 相当（`/admin` も含む）
 - 自動テスト、lint、production build
 - Analytics送信の土台（測定IDが無いときは何も送らない）
-
-まだ公開URLはない。一般ユーザーが使える状態にするには、GitHub公開と Cloudflare Pages デプロイが必要。オーナー本人の操作待ち。
+- Cloudflare Pages 公開: https://pdf-precheck.pages.dev/
+- GitHub: https://github.com/harutyama/pdf-precheck
+- GitHub Actions による自動デプロイワークフロー（Secrets 設定後に有効）
 
 ## 使用技術
 
@@ -51,7 +52,7 @@
 | テスト用PDF生成 | pdf-lib（devDependencyのみ） | 1.17 |
 | Lint | oxlint | 1.75 |
 | Analytics | Google Analytics 4 | 測定IDを環境変数で注入 |
-| 公開先（予定） | Cloudflare Pages | 静的 `dist/` |
+| 公開先 | Cloudflare Pages | https://pdf-precheck.pages.dev/ |
 
 Node.js 22.13 以降が必要。開発マシンには Homebrew で Node 26 を入れた。
 
@@ -73,7 +74,8 @@ Node.js 22.13 以降が必要。開発マシンには Homebrew で Node 26 を�
 ## ディレクトリ構成
 
 ```text
-src/config/site.ts          サービス名、説明文、プライバシー文言
+src/config/site.ts          サービス名、最大ファイル数、プライバシー文言
+src/files/selectFiles.ts    複数ファイルの上限カット
 src/pdf/parsePdf.ts         PDF.jsでページ情報を取る
 src/pdf/evaluate.ts         スナップショットから判定（純関数）
 src/pdf/runChecks.ts        ファイル選択からレポート作成
@@ -156,6 +158,7 @@ HANDOFF.md                  このファイル
 | check_started | size_bucket | ファイル名 |
 | check_succeeded | size_bucket, page_count_bucket, result | ファイル名、本文 |
 | check_failed | reason, size_bucket | ファイル名、本文 |
+| batch_completed | file_count, ok_count, warning_count, error_count | ファイル名、本文 |
 
 `reason` は `empty | not_pdf | encrypted | corrupt | unknown` のみ。
 
@@ -169,8 +172,8 @@ HANDOFF.md                  このファイル
 1. Google アカウント
 2. GA4 プロパティ作成
 3. 測定ID `G-XXXXXXXXXX`
-4. Cloudflare Pages の環境変数 `VITE_GA_MEASUREMENT_ID`
-5. 再デプロイ
+4. GitHub Secrets の `VITE_GA_MEASUREMENT_ID` と、必要なら Cloudflare Pages 側の同名変数
+5. 再デプロイ（GitHub Actions または wrangler）
 
 開発段階では測定IDを入れておらず、実データは送らない・表示しない。
 
@@ -249,26 +252,21 @@ npm run build  … 成功。PDF.jsは別チャンク（parsePdf + worker）
 
 ## 公開状況
 
-- 現在: ローカルのみ。公開URLなし
-- 公開先候補: Cloudflare Pages（第一候補）。代替は Vercel / Netlify
-- 公開に必要な残作業:
-  1. Git コミット（未実施。ユーザー依頼待ち）
-  2. GitHub リポジトリ作成と push
-  3. Cloudflare アカウント作成 / ログイン
-  4. Pages でリポジトリ接続、ビルド設定
-  5. 表示確認
-  6. 任意でカスタムドメイン
-  7. GA4 作成と測定ID設定、再デプロイ
-
-アカウント作成、GitHub/Cloudflareログイン、秘密情報入力はオーナー本人が行う。
+- 現在: Cloudflare Pages で公開済み
+- 公開URL: https://pdf-precheck.pages.dev/
+- GitHub: https://github.com/harutyama/pdf-precheck
+- Cloudflare アカウント: neymar05253453@gmail.com（Pages プロジェクト名 `pdf-precheck`）
+- 残作業:
+  1. GA4 測定IDを GitHub Secrets `VITE_GA_MEASUREMENT_ID` に入れる（未設定）
+  2. GitHub Secrets `CLOUDFLARE_API_TOKEN` を入れて自動デプロイを有効化する（ワークフローは追加済み）
+  3. 必要ならカスタムドメインを付ける
 
 ## 未実装
 
-- 一般公開
-- GA4測定IDの設定
+- GA4測定IDの設定（コードとワークフローは用意済み）
+- Cloudflare APIトークンの GitHub Secrets 登録（自動デプロイ有効化）
 - 独自 `/admin`（意図的）
 - 課金、アカウント、DB、回数制限
-- 複数PDF一括
 - ユーザー独自チェック条件
 - 条件セット保存
 - OGP画像
@@ -283,7 +281,7 @@ npm run build  … 成功。PDF.jsは別チャンク（parsePdf + worker）
 - 暗号化PDFの自動テストは、例外分類まで。実ファイルは未投入
 - GA4はGoogleへ最低限の利用データを送る。PDF内容は送らないが、完全なゼロ通信ではない
 - 測定ID未設定の間、利用状況は確認できない
-- `/admin` に管理UIは無い。URLを知っていてもデータは見られない
+- 一度にチェックできるのは最大10ファイル。上限は `src/config/site.ts` の `maxPdfFiles`
 
 ## 将来のPRO版
 
@@ -306,21 +304,16 @@ npm run build  … 成功。PDF.jsは別チャンク（parsePdf + worker）
 
 優先順位順:
 
-1. このリポジトリをコミットする（ユーザーが依頼したとき）
-2. GitHub にリポジトリを作り、push する
-3. Cloudflare Pages で公開する
-4. 公開URLで、正常PDF / 非PDF / 横向き混在を手動確認する
-5. パスワード付きPDFを1つ手動で確認する
-6. GA4 を作り、測定IDを Pages の環境変数に入れて再デプロイする
-7. analytics.google.com で自分だけが見られることを確認する
-8. 必要ならカスタムドメインを付ける
-9. 公開後、数日使ってから PRO の要否を判断する
+1. GitHub Secrets に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を入れて自動デプロイを有効化する
+2. GA4 測定IDを作り、Secret `VITE_GA_MEASUREMENT_ID` に入れる
+3. 必要ならカスタムドメインを付ける
+4. 公開後、数日使ってから PRO の要否を判断する
 
 ## ChatGPTへの引き継ぎ
 
 今の状態を一文で言うと:
 
-「ブラウザ内だけで動くPDF提出前チェッカーの初期版は実装済み。テストとビルドも通るところまで来ている。一般公開とAnalytics設定は、オーナーのGitHub / Cloudflare / Google アカウント操作待ち。管理者画面は独自 `/admin` ではなく GA4 公式ダッシュボードを採用した。」
+「ブラウザ内だけで動くPDF提出前チェッカーは https://pdf-precheck.pages.dev/ で公開済み。最大10ファイルまで同時チェックできる。GitHub は https://github.com/harutyama/pdf-precheck 。自動デプロイ用 GitHub Actions はあるが、Cloudflare APIトークンの Secret が未設定。Analytics（GA4）も測定ID未設定。管理者画面は独自 `/admin` ではなく GA4 公式ダッシュボード。」
 
 次の指示の出し方の例:
 

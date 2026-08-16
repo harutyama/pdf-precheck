@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { completedParams, sanitizeAnalyticsParams } from "./events.ts";
+import { AnalyticsEvent, completedParams, sanitizeAnalyticsParams } from "./events.ts";
 import type { CheckReport } from "../pdf/types.ts";
 
 describe("sanitizeAnalyticsParams", () => {
@@ -32,5 +32,6 @@ describe("completedParams", () => {
     expect(JSON.stringify(completedParams(success))).not.toContain("個人情報");
     expect(JSON.stringify(completedParams(failed))).not.toContain("個人情報");
     expect(completedParams(failed).params.reason).toBe("encrypted");
+    expect(AnalyticsEvent.batchCompleted).toBe("batch_completed");
   });
 });

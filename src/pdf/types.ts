@@ -62,6 +62,8 @@ export type ProgressState = {
   message: string;
   currentPage?: number;
   totalPages?: number;
+  currentFile?: number;
+  totalFiles?: number;
 };
 
 export type CheckReport = {

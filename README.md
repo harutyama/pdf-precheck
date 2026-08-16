@@ -2,13 +2,14 @@
 
 提出・納品の前に、PDFの体裁をブラウザだけで確認するWebサービスです。
 
-PDFファイルはサーバーへ送信されません。読み込みとチェックは、利用者のブラウザ内で完結します。
+PDFファイルはサーバーへ送信されません。読み込みとチェックは、利用者のブラウザ内で完結します。そのため、内容が外部に送られず、セキュリティ面でも安全性が高いです。
 
 ユーザー登録、ログイン、利用回数制限はありません。初期版は完全無料です。
+一度に最大10ファイルまでチェックできます。
 
 ## 主な機能
 
-- PDFのドラッグ＆ドロップ、またはファイル選択
+- PDFのドラッグ＆ドロップ、またはファイル選択（最大10ファイルまで）
 - ブラウザ内での自動チェック
 - 処理中の進捗表示
 - 総合結果（OK / 注意 / エラー）
@@ -23,7 +24,7 @@ PDFファイルはサーバーへ送信されません。読み込みとチェ�
 - Mozilla PDF.js（`pdfjs-dist` 6、Apache-2.0）
 - Vitest 4
 - Google Analytics 4（利用状況の確認。未設定なら送信しない）
-- 公開先候補: Cloudflare Pages（静的サイト、無料枠、帯域制限なし）
+- 公開先: Cloudflare Pages（https://pdf-precheck.pages.dev/）
 
 ## ローカルでの起動方法
 
@@ -57,7 +58,8 @@ npm run lint
 ```text
 src/
   analytics/     Analytics送信（ファイル名やPDF内容は送らない）
-  config/site.ts サービス名など、名称変更しやすい設定
+  config/site.ts サービス名、最大ファイル数など
+  files/         複数ファイル選択の上限処理
   pages/         画面
   pdf/           PDF解析とチェック（UIから分離）
   ui/            画面部品
@@ -86,6 +88,7 @@ public/          favicon、Cloudflare Pages用ヘッダー
 - `check_started`
 - `check_succeeded`
 - `check_failed`
+- `batch_completed`（何件まとめてチェックしたか。ファイル名は含まない）
 
 ファイル名、PDF本文、個人が特定できる情報は送りません。
 
@@ -93,18 +96,25 @@ public/          favicon、Cloudflare Pages用ヘッダー
 
 ## 公開方法
 
-推奨: Cloudflare Pages
+公開URL: https://pdf-precheck.pages.dev/
 
-1. このリポジトリを GitHub に置く
-2. Cloudflare Pages で GitHub リポジトリを接続する
-3. ビルドコマンド `npm run build`、出力ディレクトリ `dist`
-4. 必要なら環境変数 `VITE_GA_MEASUREMENT_ID` を設定して再デプロイする
+`main` への push で GitHub Actions が Cloudflare Pages へデプロイします。必要な GitHub Secrets:
 
-詳細な手順は `HANDOFF.md` の「次にやること」にあります。
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `VITE_GA_MEASUREMENT_ID`（任意。未設定なら Analytics は送らない）
+
+手動公開する場合:
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name=pdf-precheck --branch=main
+```
 
 ## プライバシー上の設計
 
 - PDFはサーバーへアップロードしない
+- 内容が外部に送られないため、セキュリティ面でも安全性を高くしている
 - 解析はブラウザ内の PDF.js だけで行う
 - Analytics には匿名の利用イベントだけを送る
 - 測定ID以外の秘密情報はソースコードに置かない
@@ -115,7 +125,7 @@ public/          favicon、Cloudflare Pages用ヘッダー
 初期版には課金機能はありません。将来の候補:
 
 - 1日あたりの回数制限（FREE）
-- 回数無制限、独自チェック条件、条件セット保存、複数PDF一括（PRO）
+- 回数無制限、独自チェック条件、条件セット保存（PRO）
 - アカウント、ログイン、DB、決済
 
 現在のコードは、PDF判定と画面を分けてあるので、後から認証や課金を足しやすくしています。

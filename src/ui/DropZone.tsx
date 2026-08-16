@@ -1,18 +1,19 @@
-import { useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+import { site } from "../config/site.ts";
+import { takePdfFiles } from "../files/selectFiles.ts";
 
 type DropZoneProps = {
   disabled?: boolean;
-  onFile: (file: File) => void;
+  onFiles: (files: File[], ignoredCount: number) => void;
 };
 
-export function DropZone({ disabled = false, onFile }: DropZoneProps) {
+export function DropZone({ disabled = false, onFiles }: DropZoneProps) {
   const inputId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
-  function takeFile(fileList: FileList | null): void {
-    const file = fileList?.[0];
-    if (file) onFile(file);
+  function takeFiles(fileList: FileList | null): void {
+    const selected = takePdfFiles(fileList);
+    if (selected.files.length > 0) onFiles(selected.files, selected.ignoredCount);
   }
 
   return (
@@ -34,17 +35,17 @@ export function DropZone({ disabled = false, onFile }: DropZoneProps) {
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        if (!disabled) takeFile(event.dataTransfer.files);
+        if (!disabled) takeFiles(event.dataTransfer.files);
       }}
     >
       <input
         id={inputId}
-        ref={inputRef}
         type="file"
         accept="application/pdf,.pdf"
+        multiple
         disabled={disabled}
         onChange={(event) => {
-          takeFile(event.target.files);
+          takeFiles(event.target.files);
           event.target.value = "";
         }}
       />
@@ -53,6 +54,7 @@ export function DropZone({ disabled = false, onFile }: DropZoneProps) {
       </span>
       <strong>PDFをここにドロップ</strong>
       <span>またはタップしてファイルを選択</span>
+      <span className="dropzone-limit">最大{site.maxPdfFiles}ファイルまで、一度にチェックできます</span>
     </label>
   );
 }
