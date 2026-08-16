@@ -22,8 +22,9 @@ export function initAnalytics(): void {
   if (document.getElementById("ga4-gtag")) return;
 
   window.dataLayer = window.dataLayer ?? [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
+  window.gtag = function gtag() {
+    // Google 公式と同じく arguments を積む。配列だと計測されないことがある。
+    window.dataLayer?.push(arguments);
   };
   window.gtag("js", new Date());
   window.gtag("config", MEASUREMENT_ID.trim(), {
